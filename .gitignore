@@ -1,0 +1,39 @@
+# ==========================================
+# Code Composer Studio (CCS) - Tiva C (.gitignore)
+# ==========================================
+
+# --- CCS Build Configurations / Outputs ---
+# Ignores default build directories where object files and binaries are compiled
+[Dd]ebug/
+[Rr]elease/
+*.out
+*.bin
+*.hex
+*.txt
+*.map
+
+# --- TI Compiler Generated Artifacts ---
+*.obj
+*.d
+*.pp
+*.rl
+*.o
+
+# --- CCS Project Specific Local Settings ---
+# Keeps the main project structure (.project, .cproject) but ignores machine-specific details
+.settings/
+.config/
+.launches/
+
+# --- Code Composer Studio History & Target Cache ---
+# Ignores local target configuration modifications and indexer history
+.ccsproject
+*.targetconfig
+.metadata/
+RemoteSystemsTempFiles/
+
+# --- IDE Core Files to KEEP (Do NOT ignore these) ---
+# These are listed here as a reminder of what MUST be tracked:
+# !.project
+# !.cproject
+# !targetConfigs/
