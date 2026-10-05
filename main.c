@@ -26,6 +26,16 @@ volatile uint32_t msTicks = 0;
 //Structs
 typedef struct
 {
+    volatile bool lock;
+    volatile bool turned;
+    uint8_t time;
+    uint16_t last;
+} knob_t;
+
+knob_t knob = { false, false, 0, 0 };
+
+typedef struct
+{
     bool pressed;
     volatile bool debounce;
     volatile uint32_t ms_start;
@@ -52,6 +62,33 @@ void GPIO_Init(void)
     GPIOIntEnable(GPIO_PORTF_BASE, GPIO_PIN_4);
     GPIOPinWrite(GPIO_PORTF_BASE, GPIO_PIN_3, 0x0);
 }
+
+void ADC_Init(void){
+    TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
+    TimerLoadSet(TIMER0_BASE, TIMER_A, 80000);
+    TimerIntRegister(TIMER0_BASE, TIMER_A, disp_ISR);
+    TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+    TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
+    TimerEnable(TIMER0_BASE, TIMER_A);
+}
+
+int read_adc(void)
+{
+    uint32_t value = 0;
+    ADCProcessorTrigger(ADC0_BASE, 0);
+    while (!ADCIntStatus(ADC0_BASE, 0, false))
+        ;
+    ADCIntClear(ADC0_BASE, 0);
+    ADCSequenceDataGet(ADC0_BASE, 0, &value);
+    return (int) value;
+}
+
+void convert_adc(void) {
+    uint16_t raw = knob.last;
+    if (raw > 4095) raw = 4095;
+    knob.time = (uint8_t)((raw * 255) / 4095);
+}
+
 
 void SysTick_Init(void)
 {
@@ -92,6 +129,19 @@ void SwCheck(void){
             }
         }
 }
+
+void check_knob(void)
+{
+    uint16_t current = read_adc();
+    if (abs(current - knob.last) > 20)
+    {
+        knob.last = current;
+        knob.time = (uint8_t) ((current * 255) / 4095);
+        knob.turned = true;
+        clk.set_last = msticks;
+    }
+}
+
 
 void LED_State(void){
     if(sw1.pressed && ((GPIOPinRead(GPIO_PORTF_BASE, GPIO_PIN_4) & GPIO_PIN_4) == 0)){
