@@ -66,10 +66,54 @@ void GPIO_Init(void)
 void ADC_Init(void){
     TimerConfigure(TIMER0_BASE, TIMER_CFG_PERIODIC);
     TimerLoadSet(TIMER0_BASE, TIMER_A, 80000);
-    TimerIntRegister(TIMER0_BASE, TIMER_A, disp_ISR);
+    TimerIntRegister(TIMER0_BASE, TIMER_A, );
     TimerIntClear(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
     TimerIntEnable(TIMER0_BASE, TIMER_TIMA_TIMEOUT);
     TimerEnable(TIMER0_BASE, TIMER_A);
+}
+
+void PWM_Init(void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_PWM1);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_PWM1))
+    {
+    }
+    GPIOPinTypePWM(GPIO_PORTF_BASE, GPIO_PIN_1 | GPIO_PIN_2);
+    GPIOPinConfigure(GPIO_PF1_M1PWM5);
+    GPIOPinConfigure(GPIO_PF2_M1PWM6);
+
+    PWMGenConfigure(PWM1_BASE, PWM_GEN_2,
+    PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+    PWMGenConfigure(PWM1_BASE, PWM_GEN_3,
+    PWM_GEN_MODE_DOWN | PWM_GEN_MODE_NO_SYNC);
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_2, 4096);
+    PWMGenPeriodSet(PWM1_BASE, PWM_GEN_3, 4096);
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_5, 1);
+    PWMPulseWidthSet(PWM1_BASE, PWM_OUT_6, 1);
+    PWMGenEnable(PWM1_BASE, PWM_GEN_2);
+    PWMGenEnable(PWM1_BASE, PWM_GEN_3);
+    PWMOutputState(PWM1_BASE, PWM_OUT_5_BIT | PWM_OUT_6_BIT, true);
+}
+
+void ADC_Init(void)
+{
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOE);
+    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_ADC0))
+    {
+    }
+    while (!SysCtlPeripheralReady(SYSCTL_PERIPH_ADC1))
+    {
+    }
+    GPIOPinTypeADC(GPIO_PORTE_BASE, GPIO_PIN_5);
+    ADCHardwareOversampleConfigure(ADC0_BASE, 64);
+    HWREG(ADC0_BASE + 0x38) |= 0x40;
+    ADCSequenceConfigure(ADC0_BASE, 3, ADC_TRIGGER_PROCESSOR, 0);
+    ADCSequenceStepConfigure(ADC0_BASE, 3, 0,
+    ADC_CTL_CH11 | ADC_CTL_IE | ADC_CTL_END);
+    ADCSequenceEnable(ADC0_BASE, 3);
+    ADCIntRegister(ADC0_BASE, 3, ADC0ISR);
+    ADCIntEnable(ADC0_BASE, 3);
 }
 
 int read_adc(void)
@@ -141,6 +185,8 @@ void check_knob(void)
         clk.set_last = msticks;
     }
 }
+
+void PWM_Brightness(void)
 
 
 void LED_State(void){
