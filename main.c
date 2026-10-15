@@ -183,10 +183,14 @@ void Echo_Capture(void){
 //}
 
 void Echo_Return(void){
-    float Distance_cm = (float)echo_time * 0.0002144f; // Convert cycles to distance (\frac{1}{80M} * 343 * 100)
+    uint32_t local_echo_time = echo_time; // Snapshot to protect race conditions
+    new_echo = false; // Clear flag
+    float Distance_cm = (float)local_echo_time * 0.0002144f; // Convert cycles to distance (\frac{1}{80M} * 343 * 100)
     if(Distance_cm <= 0.0f ){Distance_cm = 0.0f;} // Bound for safety
     if(Distance_cm >= 100.0f){Distance_cm = 100.0f;} //Bound for safety
-    servo_duty = 1250 + (uint32_t)(Distance_cm * 50.0f); // Convert back to cycles with offset
+    static float filtered_distance = 0.0f;
+    filtered_distance = (.3f * Distance_cm) + ((1.0f - .3f) * filtered_distance);
+    servo_duty = 1250 + (uint32_t)(filtered_distance * 50.0f); // Convert back to cycles with offset
     PWMPulseWidthSet(PWM0_BASE, PWM_OUT_4, servo_duty); // Set cycles for angle
     new_echo = false; // Clear flag
 }
